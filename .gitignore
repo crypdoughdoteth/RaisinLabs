@@ -1,7 +1,8 @@
 # Compiler files
 cache/
 out/
-
+.vscode
+.github
 # Ignores development broadcast logs
 !/broadcast
 /broadcast/*
