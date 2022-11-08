@@ -16,7 +16,7 @@ contract RaisinCore is Ownable {
     /                                                                   \
     /                                                                   /
     ///////////////////////////////////////////////////////////////////*/
-                                                            
+    //add more info to FundStarted event -- amount, chain, token, goal                                 
     event FundStarted (uint32 indexed id);
     event TokenDonated (address indexed adr, IERC20 token, uint indexed amount, uint32 indexed id);
     event TokenAdded (IERC20  indexed token);
@@ -67,6 +67,7 @@ contract RaisinCore is Ownable {
         IERC20 _token; 
         //address of wallet raising funds
         address _raiser;
+        address _recipient;
         //timestamp expiry 
         uint _expires;        
     }
@@ -104,11 +105,11 @@ contract RaisinCore is Ownable {
    //@param amount: amount of tokens being raised
    //@param token: token raised in
    
-    function initFund (uint amount, IERC20 token) external {
+    function initFund (uint amount, IERC20 token, address recipient) external {
         require (amount > 0, "Amount = 0");
         require(tokenWhitelist[token] = true, "Token Not Whitelisted");
         ++id;
-        raisins.push(Raisin(amount, 0, id, token, msg.sender, getExpiry()));
+        raisins.push(Raisin(amount, 0, id, token, msg.sender, recipient, getExpiry()));
         emit FundStarted(id);
     }
 
@@ -152,7 +153,7 @@ contract RaisinCore is Ownable {
         raisins[index]._fundBal -= bal;
         deleteFund(index);
         approveTokenForContract(token, bal);
-        erc20Transfer(token, address(this), msg.sender, bal);
+        erc20Transfer(token, address(this), raisins[index]._recipient, bal);
     }
 
     function refund (IERC20 token, uint32 index) external payable{
