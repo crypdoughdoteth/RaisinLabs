@@ -17,10 +17,10 @@ contract RaisinCore is Ownable {
     /                                                                   /
     ///////////////////////////////////////////////////////////////////*/
     //add more info to FundStarted event -- amount, chain, token, goal                                 
-    event FundStarted (uint32 indexed id);
+    event FundStarted (uint indexed amount, uint32 id, IERC20 indexed token, address indexed raiser, address recipient, uint expires);
     event TokenDonated (address indexed adr, IERC20 token, uint indexed amount, uint32 indexed id);
-    event TokenAdded (IERC20  indexed token);
-    event FundEnded (uint32 indexed id, uint indexed length);
+    event TokenAdded (IERC20 indexed token);
+    event FundEnded (uint32 indexed id, uint indexed index, uint indexed length);
 
     /* /////////////////////////////////////////////////////////////////
     /                                                                   /
@@ -110,7 +110,7 @@ contract RaisinCore is Ownable {
         require(tokenWhitelist[token] = true, "Token Not Whitelisted");
         ++id;
         raisins.push(Raisin(amount, 0, id, token, msg.sender, recipient, getExpiry()));
-        emit FundStarted(id);
+        emit FundStarted(amount, id, token, msg.sender, recipient, getExpiry());
     }
 
     function endFund (uint32 index) external {
@@ -212,7 +212,7 @@ contract RaisinCore is Ownable {
        // del [1]:[1,2,3,4] => [1, NULL, 3, 4] =>  [1, 4, 3, NULL] 
        raisins[index] = raisins[raisins.length - 1];
        raisins.pop();
-       emit FundEnded(index, (raisins.length + 1));
+       emit FundEnded(raisins[index]._id, index, (raisins.length + 1));
     }
     function getExpiry() private view returns (uint) {
         return block.timestamp + expiry;
