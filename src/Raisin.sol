@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-//Copyright (C) 2022 Crypdough Labs
+//Copyright (C) 2022 Raisin Labs
 
 pragma solidity 0.8.17;
 
@@ -48,7 +48,7 @@ contract RaisinCore is Ownable {
     uint public fee;
     //expiry time for all projects
     uint public expiry;
-
+    address public governance;
 
     /* /////////////////////////////////////////////////////////////////
     /                                                                   /
@@ -83,10 +83,11 @@ contract RaisinCore is Ownable {
     Raisin [] public raisins; 
 
 
-    constructor () {
+    constructor (address treasury, address governanceMultisig) {
         expiry = 180 days;
-        vault = msg.sender;
+        vault = treasury;
         fee = 200; 
+        governance = governanceMultisig;
     }
 
 
@@ -112,8 +113,8 @@ contract RaisinCore is Ownable {
     }
 
     function endFund (uint64 index) external {
-        require (msg.sender == raisins[index]._raiser || msg.sender == owner());
-        raisins[index]._expires = block.timestamp;
+        require (msg.sender == raisins[index]._raiser || msg.sender == governance);
+        raisins[index]._expires = block.timestamp;S
         if(raisins[index]._fundBal == 0){
             deleteFund(index);
         }
@@ -210,7 +211,7 @@ contract RaisinCore is Ownable {
        // del [1]:[1,2,3,4] => [1, NULL, 3, 4] =>  [1, 4, 3, NULL] 
        raisins[index] = raisins[raisins.length - 1];
        raisins.pop();
-       emit FundEnded(raisins[index]._id, index, (raisins.length + 1));
+       emit FundEnded(raisins[index]._id, index, raisins.length);
     }
 
     function manageDiscount (address partnerWallet, uint newFee) external onlyOwner {
@@ -245,4 +246,10 @@ contract RaisinCore is Ownable {
         require(newAddress != address(0));
         vault = newAddress;
     }
+
+    function changeGovernanceWallet(address newGovWallet) external onlyOwner {
+        require (newGovWallet != address(0));
+        governance = newGovWallet;
+    }
+
 }
