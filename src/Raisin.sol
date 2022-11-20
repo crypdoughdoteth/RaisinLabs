@@ -114,7 +114,7 @@ contract RaisinCore is Ownable {
 
     function endFund (uint64 index) external {
         require (msg.sender == raisins[index]._raiser || msg.sender == governance);
-        raisins[index]._expires = block.timestamp;S
+        raisins[index]._expires = block.timestamp;
         if(raisins[index]._fundBal == 0){
             deleteFund(index);
         }
