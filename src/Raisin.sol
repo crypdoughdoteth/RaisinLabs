@@ -214,7 +214,7 @@ contract RaisinCore is Ownable {
        raisins[index] = raisins[raisins.length - 1];
        raisins.pop();
        uint64 causeId = raisins[index]._id;
-       emit FundEnded(id, index, raisins.length);
+       emit FundEnded(causeId, index, raisins.length);
     }
 
     function manageDiscount (address partnerWallet, uint newFee) external onlyOwner {
