@@ -19,7 +19,7 @@ contract RaisinCore is Ownable {
     event FundStarted (uint indexed amount, uint64 id, uint index, IERC20 indexed token, address indexed raiser, address recipient, uint expires);
     event TokenDonated (address indexed adr, IERC20 token, uint indexed amount, uint64 indexed id, uint index);
     event TokenAdded (IERC20 indexed token);
-    event FundEnded (uint indexed index, uint indexed length);
+    event FundEnded (uint indexed index, uint indexed length, uint64 id);
 
     /* /////////////////////////////////////////////////////////////////
     /                                                                   /
@@ -114,8 +114,9 @@ contract RaisinCore is Ownable {
     function endFund (uint64 index) external {
         require (msg.sender == raisins[index]._raiser || msg.sender == governance);
         raisins[index]._expires = block.timestamp;
+        uint64 causeId = raisins[index]._id;
         if(raisins[index]._fundBal == 0){
-            deleteFund(index);
+            deleteFund(index, causeId);
         }
     }
 
@@ -144,12 +145,12 @@ contract RaisinCore is Ownable {
     ///////////////////////////////////////////////////////////////////*/
 
     function fundWithdraw (IERC20 token, uint64 index) external payable{
-        require (msg.sender == raisins[index]._raiser, "Not Your Fund");
         require(raisins[index]._fundBal >= raisins[index]._amount, "Goal Not Reached");
         require (block.timestamp >= raisins[index]._expires, "Fund Still Active");
         uint bal = raisins[index]._fundBal;
         address recipient = raisins[index]._recipient;
-        deleteFund(index);
+        uint64 causeId = raisins[index]._id;
+        deleteFund(index, causeId);
         approveTokenForContract(token, bal);
         erc20Transfer(token, address(this), recipient, bal);
     }
@@ -162,7 +163,7 @@ contract RaisinCore is Ownable {
         donorBal[msg.sender][causeId] -= bal;
         raisins[index]._fundBal -= bal;
         if (bal == 0) {
-            deleteFund(index);
+            deleteFund(index, causeId);
         }
         approveTokenForContract(token, bal);
         erc20Transfer(token, address(this), msg.sender, bal);
@@ -203,14 +204,14 @@ contract RaisinCore is Ownable {
     ///////////////////////////////////////////////////////////////////*/
 
 
-    function deleteFund (uint64 index) internal {
+    function deleteFund (uint64 index, uint64 _id) internal {
        //delete array element by ID 
        //strat: mix and match
        //rationale: maximizes order preservation and cost eff. 
        // del [1]:[1,2,3,4] => [1, NULL, 3, 4] =>  [1, 4, 3, NULL] 
        raisins[index] = raisins[raisins.length - 1];
        raisins.pop();
-       emit FundEnded(index, raisins.length);
+       emit FundEnded(index, raisins.length, _id);
     }
 
     function manageDiscount (address partnerWallet, uint newFee) external onlyOwner {
