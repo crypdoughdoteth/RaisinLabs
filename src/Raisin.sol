@@ -9,6 +9,16 @@ import "lib/openzeppelin-contracts/contracts/utils/math/SafeMath.sol";
 
 contract RaisinCore is Ownable {
    using SafeMath for uint256;
+   
+   //custom errors
+   error zeroGoal(uint);
+   error tokenNotWhitelisted(IERC20);
+   error notYourRaisin(uint64);
+   error raisinExpired();
+   error raisinActive();
+   error goalNotReached();
+   error goalReached();
+
     /* /////////////////////////////////////////////////////////////////
     /                                                                   /
     /                                                                   \
@@ -103,8 +113,8 @@ contract RaisinCore is Ownable {
    //@param token: token raised in
    
     function initFund (uint amount, IERC20 token, address recipient) external {
-        require (amount > 0, "Amount = 0");
-        require(tokenWhitelist[token] = true, "Token Not Whitelisted");
+        if (amount == 0){revert zeroGoal(amount);}
+        if(tokenWhitelist[token] != true){revert tokenNotWhitelisted(token);}
         ++id;
         uint expires = getExpiry();
         raisins.push(Raisin(amount, 0, id, token, msg.sender, recipient, expires));
@@ -112,12 +122,10 @@ contract RaisinCore is Ownable {
     }
 
     function endFund (uint64 index) external {
-        require (msg.sender == raisins[index]._raiser || msg.sender == governance);
-        raisins[index]._expires = block.timestamp;
+        if (msg.sender != (raisins[index]._raiser || governance)){revert notYourRaisin(index);}
         uint64 causeId = raisins[index]._id;
-        if(raisins[index]._fundBal == 0){
-            deleteFund(index, causeId);
-        }
+        if(raisins[index]._fundBal == 0){deleteFund(index, causeId);}
+        raisins[index]._expires = block.timestamp;
     }
 
     function donateToken (
@@ -125,8 +133,8 @@ contract RaisinCore is Ownable {
         uint64 index,
         uint amount
     ) external payable {
-        require (block.timestamp < raisins[index]._expires, "Fund Not Active"); 
-        require (token == raisins[index]._token, "Token Not Accepted"); 
+        if (block.timestamp >= raisins[index]._expires){revert raisinExpired();} 
+        if (token != raisins[index]._token){revert tokenWhitelist(token);} 
         uint donation = amount - calculateFee(amount, index);
         donorBal[msg.sender][raisins[index]._id] += donation;
         raisins[index]._fundBal += donation; 
@@ -145,8 +153,8 @@ contract RaisinCore is Ownable {
     ///////////////////////////////////////////////////////////////////*/
 
     function fundWithdraw (IERC20 token, uint64 index) external payable{
-        require(raisins[index]._fundBal >= raisins[index]._amount, "Goal Not Reached");
-        require (block.timestamp >= raisins[index]._expires, "Fund Still Active");
+        if(raisins[index]._fundBal < raisins[index]._amount){revert goalNotReached();}
+        if (block.timestamp < raisins[index]._expires){revert raisinActive();}
         uint bal = raisins[index]._fundBal;
         address recipient = raisins[index]._recipient;
         uint64 causeId = raisins[index]._id;
@@ -156,8 +164,8 @@ contract RaisinCore is Ownable {
     }
 
     function refund (IERC20 token, uint64 index) external payable{
-        require (block.timestamp >= raisins[index]._expires, "Fund Still Active"); 
-        require(raisins[index]._fundBal < raisins[index]._amount, "Goal reached");
+        if (block.timestamp < raisins[index]._expires){revert raisinActive();} 
+        if (raisins[index]._fundBal >= raisins[index]._amount){revert goalReached();}
         uint64 causeId = raisins[index]._id;
         uint bal = donorBal[msg.sender][causeId];
         donorBal[msg.sender][causeId] -= bal;
@@ -251,5 +259,4 @@ contract RaisinCore is Ownable {
         require (newGovWallet != address(0));
         governance = newGovWallet;
     }
-
 }
