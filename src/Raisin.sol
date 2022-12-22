@@ -7,15 +7,6 @@ import "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 import "lib/openzeppelin-contracts/contracts/utils/math/SafeMath.sol";
 
-// SPDX-License-Identifier: BUSL-1.1
-//Copyright (C) 2022 Raisin Labs
-
-pragma solidity 0.8.17;
-
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-
 contract RaisinCore is Ownable {
    using SafeMath for uint256;
 
