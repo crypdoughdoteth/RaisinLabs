@@ -13,7 +13,7 @@ contract RaisinCore is Ownable {
    //custom errors
    error zeroGoal(uint);
    error tokenNotWhitelisted(IERC20);
-   error notYourRaisin(uint64);
+   error notYourRaisin(uint);
    error raisinExpired();
    error raisinActive();
    error goalNotReached();
@@ -39,7 +39,7 @@ contract RaisinCore is Ownable {
     /                                                                   /
     ///////////////////////////////////////////////////////////////////*/
 
-    mapping (address => mapping(uint64 => uint)) public donorBal;
+    mapping (address => mapping(uint => uint)) public donorBal;
     mapping (IERC20 => bool) public tokenWhitelist;
     mapping (address => uint) private partnership;
 
@@ -116,7 +116,7 @@ contract RaisinCore is Ownable {
         emit FundStarted(amount, raisins.length - 1, token, msg.sender, recipient, expires);
     }
 
-    function endFund (uint64 index) external {
+    function endFund (uint index) external {
         if (msg.sender != raisins[index]._raiser || msg.sender != governance){revert notYourRaisin(index);}
         raisins[index]._expires = block.timestamp;
         if(raisins[index]._fundBal == 0){emit FundEnded(index);}
@@ -124,12 +124,12 @@ contract RaisinCore is Ownable {
 
     function donateToken (
         IERC20 token,
-        uint64 index,
+        uint index,
         uint amount
     ) external payable {
         if (block.timestamp >= raisins[index]._expires){revert raisinExpired();} 
         if (token != raisins[index]._token){revert tokenNotWhitelisted(token);} 
-        uint donation = amount - calculateFee(amount, index);
+        uint donation = amount - calculateFee(amount, msg.sender);
         donorBal[msg.sender][index] += donation;
         raisins[index]._fundBal += donation; 
         erc20Transfer(token, msg.sender, vault, (amount - donation)); 
@@ -146,7 +146,7 @@ contract RaisinCore is Ownable {
     /                                                                   /
     ///////////////////////////////////////////////////////////////////*/
 
-    function fundWithdraw (IERC20 token, uint64 index) external payable{
+    function fundWithdraw (IERC20 token, uint index) external payable{
         if(raisins[index]._fundBal < raisins[index]._amount){revert goalNotReached();}
         if (block.timestamp < raisins[index]._expires){revert raisinActive();}
         uint bal = raisins[index]._fundBal;
@@ -156,7 +156,7 @@ contract RaisinCore is Ownable {
         emit FundEnded(index);
     }
 
-    function refund (IERC20 token, uint64 index) external payable{
+    function refund (IERC20 token, uint index) external payable{
         if (block.timestamp < raisins[index]._expires){revert raisinActive();} 
         if (raisins[index]._fundBal >= raisins[index]._amount){revert goalReached();}
         uint bal = donorBal[msg.sender][index];
@@ -207,8 +207,8 @@ contract RaisinCore is Ownable {
     function getExpiry() private view returns (uint) {
         return block.timestamp + expiry;
     }
-    function calculateFee(uint amount, uint64 index) private view returns (uint _fee){
-        uint pf = partnership[raisins[index]._raiser];
+    function calculateFee(uint amount, address raiser) private view returns (uint _fee){
+        uint pf = partnership[raiser];
         return pf != 0 ? _fee = amount.mul(pf).div(10000) : _fee = amount.mul(fee).div(10000);
     }
     //we need to store a flat amount of time here UNIX format
@@ -216,7 +216,7 @@ contract RaisinCore is Ownable {
         expiry = newExpiry; 
         return expiry;
     }
-    function changeFee(uint64 newFee) external onlyOwner {
+    function changeFee(uint newFee) external onlyOwner {
         require (newFee != 0 && newFee != fee);
         fee = newFee; 
     }
