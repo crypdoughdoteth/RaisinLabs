@@ -7,9 +7,18 @@ import "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 import "lib/openzeppelin-contracts/contracts/utils/math/SafeMath.sol";
 
+// SPDX-License-Identifier: BUSL-1.1
+//Copyright (C) 2022 Raisin Labs
+
+pragma solidity 0.8.17;
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+
 contract RaisinCore is Ownable {
    using SafeMath for uint256;
-   
+
    //custom errors
    error zeroGoal(uint);
    error tokenNotWhitelisted(IERC20);
@@ -26,10 +35,10 @@ contract RaisinCore is Ownable {
     /                                                                   \
     /                                                                   /
     ///////////////////////////////////////////////////////////////////*/
-    event FundStarted (uint indexed amount, uint64 id, uint index, IERC20 indexed token, address indexed raiser, address recipient, uint expires);
-    event TokenDonated (address indexed adr, IERC20 token, uint indexed amount, uint64 indexed id, uint index);
+    event FundStarted (uint indexed amount, uint index, IERC20 indexed token, address indexed raiser, address recipient, uint expires);
+    event TokenDonated (address indexed adr, IERC20 token, uint indexed amount, uint index);
     event TokenAdded (IERC20 indexed token);
-    event FundEnded (uint indexed index, uint indexed length, uint64 id);
+    event FundEnded (uint indexed index);
 
     /* /////////////////////////////////////////////////////////////////
     /                                                                   /
@@ -38,7 +47,7 @@ contract RaisinCore is Ownable {
     /                                                                   \
     /                                                                   /
     ///////////////////////////////////////////////////////////////////*/
-    // address => raisins[index]._id => amount 
+
     mapping (address => mapping(uint64 => uint)) public donorBal;
     mapping (IERC20 => bool) public tokenWhitelist;
     mapping (address => uint) private partnership;
@@ -50,8 +59,6 @@ contract RaisinCore is Ownable {
     /                                                                   \
     /                                                                   /
     ///////////////////////////////////////////////////////////////////*/
-    //incrementing id
-    uint64 id;
     //withdraw address
     address private vault;
     uint public fee;
@@ -70,8 +77,6 @@ contract RaisinCore is Ownable {
         //raise goal amount in native token 
         uint _amount;
         uint _fundBal;
-        //cause id
-        uint64 _id;
         //balance of fund
         //token to raise in 
         IERC20 _token; 
@@ -115,17 +120,15 @@ contract RaisinCore is Ownable {
     function initFund (uint amount, IERC20 token, address recipient) external {
         if (amount == 0){revert zeroGoal(amount);}
         if(tokenWhitelist[token] != true){revert tokenNotWhitelisted(token);}
-        ++id;
         uint expires = getExpiry();
-        raisins.push(Raisin(amount, 0, id, token, msg.sender, recipient, expires));
-        emit FundStarted(amount, id, raisins.length - 1, token, msg.sender, recipient, expires);
+        raisins.push(Raisin(amount, 0, token, msg.sender, recipient, expires));
+        emit FundStarted(amount, raisins.length - 1, token, msg.sender, recipient, expires);
     }
 
     function endFund (uint64 index) external {
-        if (msg.sender != (raisins[index]._raiser || governance)){revert notYourRaisin(index);}
-        uint64 causeId = raisins[index]._id;
-        if(raisins[index]._fundBal == 0){deleteFund(index, causeId);}
+        if (msg.sender != raisins[index]._raiser || msg.sender != governance){revert notYourRaisin(index);}
         raisins[index]._expires = block.timestamp;
+        if(raisins[index]._fundBal == 0){emit FundEnded(index);}
     }
 
     function donateToken (
@@ -134,13 +137,13 @@ contract RaisinCore is Ownable {
         uint amount
     ) external payable {
         if (block.timestamp >= raisins[index]._expires){revert raisinExpired();} 
-        if (token != raisins[index]._token){revert tokenWhitelist(token);} 
+        if (token != raisins[index]._token){revert tokenNotWhitelisted(token);} 
         uint donation = amount - calculateFee(amount, index);
-        donorBal[msg.sender][raisins[index]._id] += donation;
+        donorBal[msg.sender][index] += donation;
         raisins[index]._fundBal += donation; 
         erc20Transfer(token, msg.sender, vault, (amount - donation)); 
         erc20Transfer(token, msg.sender, address(this), donation); 
-        emit TokenDonated (msg.sender, token, donation, raisins[index]._id, index);
+        emit TokenDonated (msg.sender, token, donation, index);
 
     }
 
@@ -156,25 +159,21 @@ contract RaisinCore is Ownable {
         if(raisins[index]._fundBal < raisins[index]._amount){revert goalNotReached();}
         if (block.timestamp < raisins[index]._expires){revert raisinActive();}
         uint bal = raisins[index]._fundBal;
-        address recipient = raisins[index]._recipient;
-        uint64 causeId = raisins[index]._id;
-        deleteFund(index, causeId);
+        raisins[index]._fundBal = 0;
         approveTokenForContract(token, bal);
-        erc20Transfer(token, address(this), recipient, bal);
+        erc20Transfer(token, address(this), raisins[index]._recipient, bal);
+        emit FundEnded(index);
     }
 
     function refund (IERC20 token, uint64 index) external payable{
         if (block.timestamp < raisins[index]._expires){revert raisinActive();} 
         if (raisins[index]._fundBal >= raisins[index]._amount){revert goalReached();}
-        uint64 causeId = raisins[index]._id;
-        uint bal = donorBal[msg.sender][causeId];
-        donorBal[msg.sender][causeId] -= bal;
+        uint bal = donorBal[msg.sender][index];
+        donorBal[msg.sender][index] -= bal;
         raisins[index]._fundBal -= bal;
-        if (bal == 0) {
-            deleteFund(index, causeId);
-        }
         approveTokenForContract(token, bal);
         erc20Transfer(token, address(this), msg.sender, bal);
+        if (bal == 0){emit FundEnded(index);}
     }
 
     /* /////////////////////////////////////////////////////////////////
@@ -210,17 +209,6 @@ contract RaisinCore is Ownable {
     /                                                                   \
     /                                                                   /
     ///////////////////////////////////////////////////////////////////*/
-
-
-    function deleteFund (uint64 index, uint64 _id) internal {
-       //delete array element by ID 
-       //strat: mix and match
-       //rationale: maximizes order preservation and cost eff. 
-       // del [1]:[1,2,3,4] => [1, NULL, 3, 4] =>  [1, 4, 3, NULL] 
-       raisins[index] = raisins[raisins.length - 1];
-       raisins.pop();
-       emit FundEnded(index, raisins.length, _id);
-    }
 
     function manageDiscount (address partnerWallet, uint newFee) external onlyOwner {
         partnership[partnerWallet] = newFee;
