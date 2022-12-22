@@ -211,8 +211,8 @@ contract RaisinCore is Ownable {
         uint pf = partnership[raiser];
         return pf != 0 ? _fee = amount.mul(pf).div(10000) : _fee = amount.mul(fee).div(10000);
     }
-    //we need to store a flat amount of time here UNIX format
-    function changeGlobalExpiry(uint newExpiry) external onlyOwner returns (uint){
+    //we need to store a flat amount of time here UNIX format padded to 32 bytes
+    function changeGlobalExpiry(uint newExpiry) external onlyOwner returns (uint64){
         expiry = uint64(newExpiry); 
         return expiry;
     }
