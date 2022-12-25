@@ -14,6 +14,7 @@ contract RaisinCore is Ownable {
    error zeroGoal(uint);
    error tokenNotWhitelisted(IERC20);
    error notYourRaisin(uint);
+   error cannotSlashPartners(address);
    error raisinExpired();
    error raisinActive();
    error goalNotReached();
@@ -118,6 +119,9 @@ contract RaisinCore is Ownable {
 
     function endFund (uint index) external {
         if (msg.sender != raisins[index]._raiser || msg.sender != governance){revert notYourRaisin(index);}
+        if (msg.sender == governance){
+            if(partnership[raisins[index]._raiser] != 0){revert cannotSlashPartners(msg.sender);}
+        }
         raisins[index]._expires = uint64(block.timestamp);
         if(raisins[index]._fundBal == 0){emit FundEnded(index);}
     }
