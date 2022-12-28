@@ -1,22 +1,17 @@
 // SPDX-License-Identifier: BUSL-1.1
 //Copyright (C) 2022 Raisin Labs
 
-pragma solidity 0.8.17;
-
-import "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
-
 contract RaisinCore is Ownable {
 
    //custom errors
-   error zeroGoal(uint);
-   error tokenNotWhitelisted(IERC20);
-   error notYourRaisin(uint);
-   error cannotSlashPartners(address);
-   error raisinExpired();
-   error raisinActive();
-   error goalNotReached();
-   error goalReached();
+    error zeroGoal(uint);
+    error tokenNotWhitelisted(IERC20);
+    error notYourRaisin(uint);
+    error cannotSlashPartners(address);
+    error raisinExpired();
+    error raisinActive();
+    error goalNotReached();
+    error goalReached();
 
     /* /////////////////////////////////////////////////////////////////
     /                                                                   /
@@ -114,6 +109,10 @@ contract RaisinCore is Ownable {
         return raisins[index]._expires;
     }
 
+    function getLength() public view returns (uint){
+        return raisins.length;
+    }
+
     /* /////////////////////////////////////////////////////////////////
     /                                                                   /
     /                                                                   \
@@ -127,8 +126,9 @@ contract RaisinCore is Ownable {
    //@param token: token raised in
    
     function initFund (uint amount, IERC20 token, address recipient) external {
-        if (amount == 0){revert zeroGoal(amount);}
+        if (amount < 100){revert zeroGoal(amount);}
         if(tokenWhitelist[token] != true){revert tokenNotWhitelisted(token);}
+        if(recipient == address(0)){revert();}
         uint64 expires = getExpiry();
         raisins.push(Raisin(amount, 0, token, msg.sender, recipient, expires));
         emit FundStarted(amount, raisins.length - 1, token, msg.sender, recipient, expires);
