@@ -5,10 +5,8 @@ pragma solidity 0.8.17;
 
 import "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
-import "lib/openzeppelin-contracts/contracts/utils/math/SafeMath.sol";
 
 contract RaisinCore is Ownable {
-   using SafeMath for uint256;
 
    //custom errors
    error zeroGoal(uint);
@@ -97,6 +95,25 @@ contract RaisinCore is Ownable {
     }
 
 
+    function getAmount(uint index) public view returns (uint){
+        return raisins[index]._amount;
+    }
+    function getFundBal(uint index) public view returns (uint){
+        return raisins[index]._fundBal;
+    }    
+    function getToken(uint index) public view returns (IERC20){
+        return raisins[index]._token;
+    }    
+    function getRaiser(uint index) public view returns (address){
+        return raisins[index]._raiser;
+    }    
+    function getRecipient(uint index) public view returns (address){
+        return raisins[index]._recipient;
+    }    
+    function getExpires(uint index) public view returns (uint64){
+        return raisins[index]._expires;
+    }
+
     /* /////////////////////////////////////////////////////////////////
     /                                                                   /
     /                                                                   \
@@ -119,9 +136,7 @@ contract RaisinCore is Ownable {
 
     function endFund (uint index) external {
         if (msg.sender != raisins[index]._raiser || msg.sender != governance){revert notYourRaisin(index);}
-        if (msg.sender == governance){
-            if(partnership[raisins[index]._raiser] != 0){revert cannotSlashPartners(msg.sender);}
-        }
+        if (msg.sender == governance && partnership[raisins[index]._raiser] != 0){revert cannotSlashPartners(msg.sender);}
         raisins[index]._expires = uint64(block.timestamp);
         if(raisins[index]._fundBal == 0){emit FundEnded(index);}
     }
@@ -213,7 +228,7 @@ contract RaisinCore is Ownable {
     }
     function calculateFee(uint amount, address raiser) private view returns (uint _fee){
         uint pf = partnership[raiser];
-        return pf != 0 ? _fee = amount.mul(pf).div(10000) : _fee = amount.mul(fee).div(10000);
+        return pf != 0 ? _fee = (amount * pf) / 10000 : _fee = (amount * fee) / 10000;
     }
     //we need to store a flat amount of time here UNIX format padded to 32 bytes
     function changeGlobalExpiry(uint newExpiry) external onlyOwner returns (uint64){
