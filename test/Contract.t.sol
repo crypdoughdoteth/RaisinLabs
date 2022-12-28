@@ -22,7 +22,6 @@ contract ContractTest is Test, HelperContract {
         raisin = new RaisinCore(address(this), msg.sender);  
         tt.approve(address(raisin), 100e18);
         raisin.whitelistToken(tt);
-        raisin.manageDiscount(address(this), 100);
     }
 
     //passing tests
@@ -42,5 +41,14 @@ contract ContractTest is Test, HelperContract {
     function testNil() public {
         raisin.initFund(5e18, tt, address(this));
         raisin.endFund(0);
+    }
+
+    function testDiscount() public{
+        raisin.initFund(5e18, tt, address(this));
+        raisin.donateToken(tt, 0, 6e18);
+        raisin.manageDiscount(address(this), 100);
+        raisin.initFund(5e18, tt, address(this));
+        raisin.donateToken(tt, 1, 6e18);
+        assertEq(((6e18-raisin.getFundBal(0))/2), 6e18-raisin.getFundBal(1));
     }
 }
