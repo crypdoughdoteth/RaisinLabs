@@ -20,20 +20,24 @@ contract ContractTest is Test, HelperContract {
     function setUp() public {
 
         raisin = new RaisinCore(address(this), msg.sender);  
-        tt.approve(address(raisin), 100e18);
+        tt.approve(address(raisin), 1000000000e18);
         raisin.whitelistToken(tt);
     }
 
     //passing tests
-    function testHappyCase() public {
-        raisin.initFund(5e18, tt, address(this));
-        raisin.donateToken(tt, 0, 6e18);
+    function testHappyCase(uint amount) public {
+        vm.assume(amount > 0 );
+        vm.assume(amount <= tt.totalSupply() - ((tt.totalSupply() * 200)/10000));
+        raisin.initFund(amount, tt, address(this));
+        raisin.donateToken(tt, 0, amount + (tt.totalSupply() * 200)/10000);
         raisin.endFund(0);
         raisin.fundWithdraw(tt, 0);
     }
-    function testBaseCase() public{
-        raisin.initFund(5e18, tt, address(this));
-        raisin.donateToken(tt, 0, 4e18);
+    function testBaseCase(uint amount) public{
+        vm.assume(amount > 1 );
+        vm.assume(amount <= tt.totalSupply());
+        raisin.initFund(amount, tt, address(this));
+        raisin.donateToken(tt, 0, amount - 1);
         raisin.endFund(0);
         raisin.refund(tt, 0);
     }
