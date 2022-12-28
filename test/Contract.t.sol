@@ -18,15 +18,14 @@ contract ContractTest is Test, HelperContract {
     RaisinCore public raisin;
 
     function setUp() public {
-
         raisin = new RaisinCore(address(this), msg.sender);  
-        tt.approve(address(raisin), 1000000000e18);
+        tt.approve(address(raisin), 10000000000000000000000e18);
         raisin.whitelistToken(tt);
     }
 
     //passing tests
     function testHappyCase(uint amount) public {
-        vm.assume(amount > 0 );
+        vm.assume(amount >= 100);
         vm.assume(amount <= tt.totalSupply() - ((tt.totalSupply() * 200)/10000));
         raisin.initFund(amount, tt, address(this));
         raisin.donateToken(tt, 0, amount + (tt.totalSupply() * 200)/10000);
@@ -34,7 +33,7 @@ contract ContractTest is Test, HelperContract {
         raisin.fundWithdraw(tt, 0);
     }
     function testBaseCase(uint amount) public{
-        vm.assume(amount > 1 );
+        vm.assume(amount >= 100);
         vm.assume(amount <= tt.totalSupply());
         raisin.initFund(amount, tt, address(this));
         raisin.donateToken(tt, 0, amount - 1);
@@ -55,4 +54,19 @@ contract ContractTest is Test, HelperContract {
         raisin.donateToken(tt, 1, 6e18);
         assertEq(((6e18-raisin.getFundBal(0))/2), 6e18-raisin.getFundBal(1));
     }
+
+    function testMixedCase(uint amount, address beneificiary) public {
+        vm.assume(amount >= 100 );
+        vm.assume(amount <= tt.totalSupply() - ((tt.totalSupply() * 200)/10000));
+        raisin.initFund(amount, tt, beneificiary);
+        raisin.donateToken(tt, raisin.getLength() - 1, amount);
+        raisin.endFund(raisin.getLength() - 1);
+        if(raisin.getFundBal(raisin.getLength() - 1) < raisin.getAmount(raisin.getLength() - 1)){
+            raisin.refund(tt, raisin.getLength() - 1);        
+        }
+        else{
+            raisin.fundWithdraw(tt, raisin.getLength() - 1);
+        }
+    }
+
 }
