@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: BUSL-1.1
 //Copyright (C) 2022 Raisin Labs
 
+pragma solidity 0.8.17;
+
+import "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
+
+
 contract RaisinCore is Ownable {
 
    //custom errors
