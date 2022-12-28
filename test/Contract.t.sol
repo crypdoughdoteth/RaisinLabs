@@ -55,11 +55,12 @@ contract ContractTest is Test, HelperContract {
         assertEq(((6e18-raisin.getFundBal(0))/2), 6e18-raisin.getFundBal(1));
     }
 
-    function testMixedCase(uint amount, address beneificiary) public {
-        vm.assume(amount >= 100 );
-        vm.assume(amount <= tt.totalSupply() - ((tt.totalSupply() * 200)/10000));
-        raisin.initFund(amount, tt, beneificiary);
-        raisin.donateToken(tt, raisin.getLength() - 1, amount);
+    function testMixedCase(uint amount, address beneficiary, uint donation) public {
+        vm.assume(beneficiary != address(0));
+        vm.assume(amount >= 100 && amount <= tt.totalSupply() - ((tt.totalSupply() * 200)/10000));
+        vm.assume(donation > 100 && donation <= tt.totalSupply() - ((tt.totalSupply() * 200)/10000));
+        raisin.initFund(amount, tt, beneficiary);
+        raisin.donateToken(tt, raisin.getLength() - 1, donation);
         raisin.endFund(raisin.getLength() - 1);
         if(raisin.getFundBal(raisin.getLength() - 1) < raisin.getAmount(raisin.getLength() - 1)){
             raisin.refund(tt, raisin.getLength() - 1);        
@@ -68,5 +69,4 @@ contract ContractTest is Test, HelperContract {
             raisin.fundWithdraw(tt, raisin.getLength() - 1);
         }
     }
-
 }
