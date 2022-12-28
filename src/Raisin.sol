@@ -135,7 +135,7 @@ contract RaisinCore is Ownable {
     }
 
     function endFund (uint index) external {
-        if (msg.sender != raisins[index]._raiser || msg.sender != governance){revert notYourRaisin(index);}
+        if (msg.sender != raisins[index]._raiser && msg.sender != governance){revert notYourRaisin(index);}
         if (msg.sender == governance && partnership[raisins[index]._raiser] != 0){revert cannotSlashPartners(msg.sender);}
         raisins[index]._expires = uint64(block.timestamp);
         if(raisins[index]._fundBal == 0){emit FundEnded(index);}
