@@ -254,9 +254,4 @@ contract RaisinCore is Ownable {
         require(newAddress != address(0));
         vault = newAddress;
     }
-
-    function changeGovernanceWallet(address newGovWallet) external onlyOwner {
-        require (newGovWallet != address(0));
-        governance = newGovWallet;
-    }
 }
