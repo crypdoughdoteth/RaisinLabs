@@ -167,22 +167,24 @@ contract RaisinCore is Ownable {
     /                                                                   /
     ///////////////////////////////////////////////////////////////////*/
 
-    function fundWithdraw (IERC20 token, uint index) external payable{
+    function fundWithdraw (uint index) external payable{
         if(raisins[index]._fundBal < raisins[index]._amount){revert goalNotReached();}
         if (uint64(block.timestamp) < raisins[index]._expires){revert raisinActive();}
         uint bal = raisins[index]._fundBal;
         raisins[index]._fundBal = 0;
+        IERC20 token = raisins[index]._token;
         approveTokenForContract(token, bal);
         erc20Transfer(token, address(this), raisins[index]._recipient, bal);
         emit FundEnded(index);
     }
 
-    function refund (IERC20 token, uint index) external payable{
+    function refund (uint index) external payable{
         if (uint64(block.timestamp) < raisins[index]._expires){revert raisinActive();} 
         if (raisins[index]._fundBal >= raisins[index]._amount){revert goalReached();}
         uint bal = donorBal[msg.sender][index];
         donorBal[msg.sender][index] -= bal;
         raisins[index]._fundBal -= bal;
+        IERC20 token = raisins[index]._token;
         approveTokenForContract(token, bal);
         erc20Transfer(token, address(this), msg.sender, bal);
         if (bal == 0){emit FundEnded(index);}
