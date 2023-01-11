@@ -18,7 +18,7 @@ contract ContractTest is Test, HelperContract {
     RaisinCore public raisin;
 
     function setUp() public {
-        raisin = new RaisinCore(address(this), msg.sender);  
+        raisin = new RaisinCore(address(this));  
         tt.approve(address(raisin), 10000000000000000000000e18);
         raisin.whitelistToken(tt);
     }
@@ -30,7 +30,7 @@ contract ContractTest is Test, HelperContract {
         raisin.initFund(amount, tt, address(this));
         raisin.donateToken(tt, 0, amount + (tt.totalSupply() * 200)/10000);
         raisin.endFund(0);
-        raisin.fundWithdraw(tt, 0);
+        raisin.fundWithdraw(0);
     }
     function testBaseCase(uint amount) public{
         vm.assume(amount >= 100);
@@ -38,7 +38,7 @@ contract ContractTest is Test, HelperContract {
         raisin.initFund(amount, tt, address(this));
         raisin.donateToken(tt, 0, amount - 1);
         raisin.endFund(0);
-        raisin.refund(tt, 0);
+        raisin.refund(0);
     }
 
     function testNil() public {
@@ -63,10 +63,10 @@ contract ContractTest is Test, HelperContract {
         raisin.donateToken(tt, raisin.getLength() - 1, donation);
         raisin.endFund(raisin.getLength() - 1);
         if(raisin.getFundBal(raisin.getLength() - 1) < raisin.getAmount(raisin.getLength() - 1)){
-            raisin.refund(tt, raisin.getLength() - 1);        
+            raisin.refund(raisin.getLength() - 1);        
         }
         else{
-            raisin.fundWithdraw(tt, raisin.getLength() - 1);
+            raisin.fundWithdraw(raisin.getLength() - 1);
         }
     }
 }
