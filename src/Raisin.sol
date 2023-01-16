@@ -17,7 +17,7 @@ contract RaisinCore is Ownable {
     error raisinActive();
     error goalNotReached();
     error goalReached();
-
+    error notSent();
     /* /////////////////////////////////////////////////////////////////
     /                                                                   /
     /                                                                   \
@@ -203,7 +203,7 @@ contract RaisinCore is Ownable {
         uint amount
     ) private {
         bool sent = token.approve(address(this), amount);
-        require(sent, "approval failed");
+        if(!sent){revert notSent();}
     }
 
     function erc20Transfer (
@@ -213,7 +213,7 @@ contract RaisinCore is Ownable {
         uint amount
         ) private {
         bool sent = token.transferFrom(sender, recipient, amount); 
-        require(sent, "Token transfer failed"); 
+        if(!sent){revert notSent();}
     }
 
     /* /////////////////////////////////////////////////////////////////
