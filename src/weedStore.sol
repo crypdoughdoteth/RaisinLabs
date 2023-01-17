@@ -140,6 +140,7 @@ contract weedStore is Ownable {
          
     }
 
+    // todo!( refactor this out, modify struct )  
     // delete and element and compact the array 
     function deleteOrder (uint64 index) private {
         orders[index] = orders[orders.length - 1]; 
