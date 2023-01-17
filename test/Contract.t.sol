@@ -69,4 +69,20 @@ contract ContractTest is Test, HelperContract {
             raisin.fundWithdraw(raisin.getLength() - 1);
         }
     }
+    
+     function testFailMixedCaseInvariants(uint amount, address beneficiary, uint donation) public {
+        vm.assume(beneficiary != address(0));
+        vm.assume(amount >= 100 && amount <= tt.totalSupply() - ((tt.totalSupply() * 200)/10000));
+        vm.assume(donation > 100 && donation <= tt.totalSupply() - ((tt.totalSupply() * 200)/10000));
+        raisin.initFund(amount, tt, beneficiary);
+        raisin.donateToken(tt, raisin.getLength() - 1, donation);
+        raisin.endFund(raisin.getLength() - 1);
+        if(raisin.getFundBal(raisin.getLength() - 1) >= raisin.getAmount(raisin.getLength() - 1)){
+            raisin.refund(raisin.getLength() - 1);        
+      
+        }
+        else{
+            raisin.fundWithdraw(raisin.getLength() - 1);
+        }
+    }
 }
