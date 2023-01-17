@@ -24,6 +24,7 @@ Copyright (C) 2023 Raisin Labs
 Use of this software is govered by the Business Source License included in the LICENSE.TXT
 
 Raisin - Change Date: 12/31/2027
+
 On Chain Stores - Change Date: TBD
 
 On the date above, in accordance with the Business Source License, use of this software will be governed by the open source license specified in the LICENSE.TXT file.
