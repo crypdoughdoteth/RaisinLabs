@@ -1,7 +1,10 @@
-# Raisin-Contract
-P2P Composable Fundraising Protocol
+# Raisin Labs
 
-[in_progress]
+[docs_in_progress]
+
+Raisin 
+
+P2P Composable Fundraising Protocol ->
 
 Documentation: https://hackmd.io/@crypdoughdoteth/rkdU_RWLi
 
