@@ -2,7 +2,7 @@
 //Copyright (C) 2023 Raisin Labs
 
 pragma solidity 0.8.19;
-//Library: Solmate
+
 import "./src/utils/SafeTransferLib.sol";
 import "./src/tokens/ERC20.sol";
 import "./src/utils/ReentrancyGuard.sol";
@@ -30,8 +30,14 @@ contract RaisinCore is ReentrancyGuard {
     event FundStarted (uint256 indexed amount, uint256 index, ERC20 indexed token, address indexed raiser, address recipient, uint64 expires);
     event TokenDonated (address adr, ERC20 indexed token, uint256 indexed amount, uint256 indexed index);
     event TokenAdded (ERC20 indexed token);
+    event TokenRemoved(ERC20 indexed token);
     event FundEnded (uint256 indexed index);
-    event Withdraw (ERC20 indexed token, uint256 indexed amount);
+    event Withdraw (ERC20 indexed token, uint256 indexed amount, uint256 indexed index);
+    event Refund(ERC20 indexed token, uint256 indexed amount, uint256 indexed index);
+    event feeChanged(uint256 indexed fee);
+    event PartnershipActivated(address indexed partner);
+    event PartnershipDeactivated(address indexed partner);
+    event VaultChanged(address indexed vault);
     // solmate/auth/owned.sol
     event OwnershipTransferred(address indexed user, address indexed newOwner);
 
@@ -213,7 +219,7 @@ contract RaisinCore is ReentrancyGuard {
         raisins[index]._fundBal = 0;
         ERC20 token = _raisin._token;
         SafeTransferLib.safeTransfer(token, _raisin._recipient, bal);
-        emit FundEnded(index);
+        emit Withdraw(token, bal, index);
     }
 
     function refund (uint256 index) external {
@@ -225,7 +231,7 @@ contract RaisinCore is ReentrancyGuard {
         raisins[index]._fundBal -= bal;
         ERC20 token = _raisin._token;
         SafeTransferLib.safeTransfer(token, msg.sender, bal);
-        emit Withdraw(token, bal);
+        emit Refund(token, bal, index);
     }
 
     /* /////////////////////////////////////////////////////////////////
@@ -253,12 +259,23 @@ contract RaisinCore is ReentrancyGuard {
         expiry = uint64(newExpiry); 
         return expiry;
     }
-    function changeFee(uint16 newFee) external payable onlyOwner {
+
+    function changeProtocolFee(uint256 newFee) external onlyOwner {
         require (newFee <= 300);
-        partnership[msg.sender].fee = newFee; 
+        fee = newFee;
+        emit feeChanged(fee);
     }
-    function togglePartnership() external payable onlyOwner{
-        !partnership[msg.sender].active; 
+    function changePartnershipFee(uint16 newFee, address partner) external payable onlyOwner {
+        require (newFee <= 300);
+        partnership[partner].fee = newFee; 
+    }
+    function togglePartnership(address partner) external payable onlyOwner{
+        !partnership[partner].active; 
+        if (partnership[partner].active) {
+            emit PartnershipActivated(partner);
+        } else {
+            emit PartnershipDeactivated(partner);
+        }
     }
 
     function whitelistToken (ERC20 token) external payable onlyOwner {
@@ -267,12 +284,14 @@ contract RaisinCore is ReentrancyGuard {
     }
 
     function removeWhitelist(ERC20 token) external payable onlyOwner {
-        tokenWhitelist[token] = false; 
+        tokenWhitelist[token] = false;
+        emit TokenRemoved(token); 
     }
 
     function changeVault(address newAddress) external payable onlyOwner {
         require(newAddress != address(0));
         vault = newAddress;
+        emit VaultChanged(vault);
     }
     
     // solmate/auth/owned.sol
