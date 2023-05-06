@@ -3,7 +3,7 @@
 
 Raisin 
 
-P2P Composable Fundraising Protocol ->
+The Modular Fundraising Protocol ->
 
 [in_progress]
 Documentation: https://hackmd.io/@crypdoughdoteth/rkdU_RWLi
