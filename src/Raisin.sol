@@ -64,8 +64,8 @@ contract RaisinCore is ReentrancyGuard {
     address private vault;
     uint256 public fee;
     //expiry time for all projects
-    uint64 public expiry;
     address public owner;
+    uint64 public expiry;
     /* /////////////////////////////////////////////////////////////////
     /                                                                   /
     /                                                                   \
