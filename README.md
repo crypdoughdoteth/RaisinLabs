@@ -1,7 +1,8 @@
 # 🍇Raisin Labs
 Welcome to the Raisin Labs Repository!
-🧩 Modular Fundraising Protocol & On Chain Stores (to be named) [future_docs]
-Here, you will find information about the exciting projects we are working on.
+🧩 Modular Fundraising Protocol
+
+## 🍇 **Check out the [Raisin CLI tool](https://github.com/crypdoughdoteth/Raisin-CLI)!**
 
 ## 📚 Documentation [in_progress]
 Our documentation is currently a work in progress, but you can find the latest version at 👉 https://hackmd.io/@crypdoughdoteth/rkdU_RWLi.
