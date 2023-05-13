@@ -3,6 +3,8 @@ Welcome to the Raisin Labs Repository!
 🧩 Modular Fundraising Protocol
 
 ## 🍇 **Check out the [Raisin CLI tool](https://github.com/crypdoughdoteth/Raisin-CLI)!**
+ 
+On Sepolia Testnet: `0x7e37Cd627C75DB9b76331F484449E5d98D5C82c5`
 
 ## 📚 Documentation [in_progress]
 Our documentation is currently a work in progress, but you can find the latest version at 👉 https://hackmd.io/@crypdoughdoteth/rkdU_RWLi.
