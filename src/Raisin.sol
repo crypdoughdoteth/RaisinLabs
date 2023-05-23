@@ -152,13 +152,14 @@ contract RaisinCore is ReentrancyGuard {
    //@param amount: amount of tokens being raised
    //@param token: token raised in
    
-    function initFund (uint256 amount, ERC20 token, address recipient) external {
+    function initFund (uint256 amount, ERC20 token, address recipient) external returns (uint256){
         if (amount < 100){revert zeroGoal(amount);}
         if(tokenWhitelist[token] != true){revert tokenNotWhitelisted(token);}
         if(recipient == address(0)){revert();}
         uint64 expires = getExpiry();
         raisins.push(Raisin(amount, 0, token, msg.sender, recipient, expires));
         emit FundStarted(amount, raisins.length - 1, token, msg.sender, recipient, expires);
+        return raisins.length - 1;
     }
 
     function endFund (uint256 index) external {
@@ -172,7 +173,7 @@ contract RaisinCore is ReentrancyGuard {
         ERC20 token,
         uint256 index,
         uint256 amount
-    ) external nonReentrant {
+    ) external nonReentrant returns (bool){
         Raisin memory _raisin = raisins[index];
         if (uint64(block.timestamp) > _raisin._expires){revert raisinExpired();} 
         if (token != _raisin._token){revert tokenNotWhitelisted(token);} 
@@ -184,9 +185,10 @@ contract RaisinCore is ReentrancyGuard {
         donorBal[msg.sender][index] += diff;
         raisins[index]._fundBal += diff;
         emit TokenDonated (msg.sender, token, donation, index);
+        return true;
     }
 
-    function batchTokenDonate(ERC20[] calldata tokens, uint256[] calldata indices, uint256[] calldata amount) external nonReentrant{
+    function batchTokenDonate(ERC20[] calldata tokens, uint256[] calldata indices, uint256[] calldata amount) external nonReentrant returns (bool) {
         if (tokens.length != indices.length || tokens.length != amount.length || indices.length != amount.length){revert arrayLengthMismatch();}
         for(uint i = 0; i < indices.length; ++i){
             Raisin memory _raisin = raisins[indices[i]];
@@ -201,6 +203,7 @@ contract RaisinCore is ReentrancyGuard {
             raisins[indices[i]]._fundBal += diff;
             emit TokenDonated (msg.sender, tokens[i], donation, indices[i]);
         }
+        return true;
     }
 
     /* /////////////////////////////////////////////////////////////////
@@ -211,7 +214,7 @@ contract RaisinCore is ReentrancyGuard {
     /                                                                   /
     ///////////////////////////////////////////////////////////////////*/
 
-    function fundWithdraw (uint256 index) external{
+    function fundWithdraw (uint256 index) external returns (bool) {
         Raisin memory _raisin = raisins[index];
         if(_raisin._fundBal <= _raisin._amount){revert goalNotReached();}
         if (uint64(block.timestamp) < _raisin._expires){revert raisinActive();}
@@ -220,9 +223,10 @@ contract RaisinCore is ReentrancyGuard {
         ERC20 token = _raisin._token;
         SafeTransferLib.safeTransfer(token, _raisin._recipient, bal);
         emit Withdraw(token, bal, index);
+        return true;
     }
 
-    function refund (uint256 index) external {
+    function refund (uint256 index) external returns (bool) {
         Raisin memory _raisin = raisins[index];
         if (uint64(block.timestamp) < _raisin._expires){revert raisinActive();} 
         if (raisins[index]._fundBal >= _raisin._amount){revert goalReached();}
@@ -232,6 +236,7 @@ contract RaisinCore is ReentrancyGuard {
         ERC20 token = _raisin._token;
         SafeTransferLib.safeTransfer(token, msg.sender, bal);
         emit Refund(token, bal, index);
+        return true;
     }
 
     /* /////////////////////////////////////////////////////////////////
