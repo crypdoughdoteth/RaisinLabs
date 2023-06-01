@@ -229,7 +229,7 @@ contract RaisinCore is ReentrancyGuard {
     function refund (uint256 index) external returns (bool) {
         Raisin memory _raisin = raisins[index];
         if (uint64(block.timestamp) < _raisin._expires){revert raisinActive();} 
-        if (raisins[index]._fundBal >= _raisin._amount){revert goalReached();}
+        if (_raisin._fundBal >= _raisin._amount){revert goalReached();}
         uint256 bal = donorBal[msg.sender][index];
         donorBal[msg.sender][index] = 0;
         raisins[index]._fundBal -= bal;
