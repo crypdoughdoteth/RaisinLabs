@@ -7,3 +7,5 @@ out/
 !/broadcast
 /broadcast/*
 /broadcast/*/31337/
+~/.config/nvim-data/undodir
+

@@ -3,14 +3,13 @@
 
 pragma solidity 0.8.19;
 
-import "./src/utils/SafeTransferLib.sol";
-import "./src/tokens/ERC20.sol";
-import "./src/utils/ReentrancyGuard.sol";
+import "solmate/utils/SafeTransferLib.sol";
+import "solmate/tokens/ERC20.sol";
+import "solmate/utils/ReentrancyGuard.sol";
 
 contract RaisinCore is ReentrancyGuard {
     using SafeTransferLib for ERC20;
    //custom errors
-    error zeroGoal(uint256);
     error tokenNotWhitelisted(ERC20);
     error notYourRaisin(uint256);
     error raisinExpired();
@@ -27,7 +26,7 @@ contract RaisinCore is ReentrancyGuard {
     /                                                                   \
     /                                                                   /
     ///////////////////////////////////////////////////////////////////*/
-    event FundStarted (uint256 indexed amount, uint256 index, ERC20 indexed token, address indexed raiser, address recipient, uint64 expires);
+    event FundStarted (uint256 indexed index, string indexed name, string indexed description, string image);
     event TokenDonated (address adr, ERC20 indexed token, uint256 indexed amount, uint256 indexed index);
     event TokenAdded (ERC20 indexed token);
     event TokenRemoved(ERC20 indexed token);
@@ -116,7 +115,6 @@ contract RaisinCore is ReentrancyGuard {
         fee = 200; 
     }
 
-
     function getAmount(uint256 index) public view returns (uint256){
         return raisins[index]._amount;
     }
@@ -152,13 +150,12 @@ contract RaisinCore is ReentrancyGuard {
    //@param amount: amount of tokens being raised
    //@param token: token raised in
    
-    function initFund (uint256 amount, ERC20 token, address recipient) external returns (uint256){
-        if (amount < 100){revert zeroGoal(amount);}
+    function initFund (uint256 amount, ERC20 token, address recipient, string calldata name, string calldata image, string calldata description) external returns (uint256){
         if(tokenWhitelist[token] != true){revert tokenNotWhitelisted(token);}
         if(recipient == address(0)){revert();}
         uint64 expires = getExpiry();
         raisins.push(Raisin(amount, 0, token, msg.sender, recipient, expires));
-        emit FundStarted(amount, raisins.length - 1, token, msg.sender, recipient, expires);
+        emit FundStarted(raisins.length - 1, name, description, image);
         return raisins.length - 1;
     }
 
@@ -180,7 +177,7 @@ contract RaisinCore is ReentrancyGuard {
         uint256 before = token.balanceOf(address(this));
         uint256 donation = amount - calculateFee(amount, _raisin._raiser);
         SafeTransferLib.safeTransferFrom(token, msg.sender, vault, (amount - donation)); 
-        SafeTransferLib.safeTransferFrom(token, msg.sender, address(this), donation); 
+        SafeTransferLib.safeTransferFrom(token, msg.sender, address(this), donation);
         uint256 diff = token.balanceOf(address(this)) - before;
         donorBal[msg.sender][index] += diff;
         raisins[index]._fundBal += diff;
@@ -272,7 +269,7 @@ contract RaisinCore is ReentrancyGuard {
     }
     function changePartnershipFee(uint16 newFee, address partner) external payable onlyOwner {
         require (newFee <= 300);
-        partnership[partner].fee = newFee; 
+        partnership[partner] = Partner({fee: newFee, active: true});
     }
     function togglePartnership(address partner) external payable onlyOwner{
         !partnership[partner].active; 
